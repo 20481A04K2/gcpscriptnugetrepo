@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
-    <RestoreSources>/root/local-nuget-packages</RestoreSources>
+    <RestoreSources>/workspace/local-nuget-packages</RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>
