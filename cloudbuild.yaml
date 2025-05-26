@@ -37,4 +37,4 @@ steps:
 
 # Enable Cloud Logging for build logs
 options:
-  logging: CLOUD_LOGGING
+  logging: CLOUD_LOGGING_ONLY
