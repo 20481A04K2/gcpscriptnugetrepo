@@ -1,9 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RestoreSources>/root/local-nuget-packages</RestoreSources>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MyDotNetWebApp" Version="1.0.0" />
+  </ItemGroup>
 
 </Project>
