@@ -1,5 +1,5 @@
 steps:
-  # Step 1: Clone your GitHub repo containing your source files (.cs, .csproj)
+  # Step 1: Clone your GitHub repo containing your source files (.cs)
 - name: 'gcr.io/cloud-builders/git'
   args: ['clone', 'https://github.com/20481A04K2/gcpscriptnugetrepo.git']
   dir: '/workspace'   # Clone into /workspace directory
