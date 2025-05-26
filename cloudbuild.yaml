@@ -1,40 +1,41 @@
 steps:
-  # Step 1: Clone your GitHub repo containing source files (.cs, .csproj)
+  # Step 1: Clone GitHub repo with .csproj
   - name: 'gcr.io/cloud-builders/git'
     args: ['clone', 'https://github.com/20481A04K2/gcpscriptnugetrepo.git']
     dir: '/workspace'
 
-  # Step 2: Use .NET SDK container to download .nupkg, create NuGet config, restore, and publish
+  # Step 2: Use Cloud SDK to download the .nupkg using gsutil
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p /workspace/local-nuget-packages
+        gsutil cp gs://my-dotnet-packages/MyDotNetWebApp.1.0.0.nupkg /workspace/local-nuget-packages/
+
+  # Step 3: Restore and publish using .NET SDK
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Create folder for local NuGet packages
-        mkdir -p ~/local-nuget-packages
-
-        # Download your specific .nupkg from GCS bucket to local folder
-        gsutil cp gs://my-dotnet-packages/MyDotNetWebApp.1.0.0.nupkg ~/local-nuget-packages/
-
-        # Create NuGet config with local package source and nuget.org fallback
+        # Create NuGet config pointing to local and nuget.org
         mkdir -p ~/.nuget/NuGet
         echo "<configuration>
-           <packageSources>
-              <add key='LocalPackages' value='/root/local-nuget-packages' />
-              <add key='nuget.org' value='https://api.nuget.org/v3/index.json' />
-           </packageSources>
+          <packageSources>
+             <add key='LocalPackages' value='/workspace/local-nuget-packages' />
+             <add key='nuget.org' value='https://api.nuget.org/v3/index.json' />
+          </packageSources>
         </configuration>" > ~/.nuget/NuGet/NuGet.Config
 
         # Move to project directory
         cd /workspace/gcpscriptnugetrepo
 
-        # Restore using local .nupkg and nuget.org
+        # Restore and publish
         dotnet restore MyApp.csproj --configfile ~/.nuget/NuGet/NuGet.Config
-
-        # Publish your app to the 'dist' folder
         dotnet publish MyApp.csproj -c Release -o ./dist
 
-  # Step 3: Upload the published 'dist' folder to your GCS bucket
+  # Step 4: Upload the published 'dist' folder to GCS
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
@@ -42,6 +43,5 @@ steps:
       - |
         gsutil -m cp -r /workspace/gcpscriptnugetrepo/dist/* gs://my-dotnet-packages/dist/
 
-# Enable Cloud Logging for build logs
 options:
   logging: CLOUD_LOGGING_ONLY
