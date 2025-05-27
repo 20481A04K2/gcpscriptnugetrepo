@@ -4,6 +4,7 @@ steps:
     args: ['clone', 'https://github.com/20481A04K2/gcpscriptnugetrepo.git']
     dir: '/workspace'
 
+
   # Step 2: Download the .nupkg file using gsutil (requires cloud-sdk image)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
