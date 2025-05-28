@@ -6,27 +6,38 @@ steps:
     args:
       - '-c'
       - |
-        apt-get update && apt-get install -y unzip curl
+        apt-get update && apt-get install -y unzip
         echo "Downloading GitHub source zip..."
         curl -L -o source.zip https://github.com/20481A04K2/gcpscriptnugetrepo/archive/refs/heads/main.zip
         unzip source.zip -d /workspace
         mv /workspace/gcpscriptnugetrepo-main /workspace/app
-  # Step 2: Add BaGet NuGet source using secret API key
+
+  # Step 2: Create NuGet.Config dynamically with BaGet source and API key
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
-    id: 'Add BaGet NuGet Source'
+    id: 'Create NuGet Config'
     entrypoint: 'bash'
     secretEnv: ['BAGET_API_KEY']
     args:
       - '-c'
       - |
-        echo "Adding BaGet NuGet source..."
-        dotnet nuget add source https://baget-service-880653953247.asia-south1.run.app/v3/index.json \
-          --name baget \
-          --username anyuser \
-          --password "$$BAGET_API_KEY" \
-          --store-password-in-clear-text
+        echo "Creating NuGet.Config with BaGet source..."
+        cat > /workspace/app/NuGet.Config <<EOF
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="baget" value="https://baget-service-880653953247.asia-south1.run.app/v3/index.json" />
+          </packageSources>
+          <packageSourceCredentials>
+            <baget>
+              <add key="Username" value="anyuser" />
+              <add key="ClearTextPassword" value="$$BAGET_API_KEY" />
+            </baget>
+          </packageSourceCredentials>
+        </configuration>
+        EOF
 
-  # Step 3: Restore packages using BaGet source
+  # Step 3: Restore packages using the created NuGet.Config
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Restore Packages from BaGet'
     entrypoint: 'bash'
@@ -34,10 +45,10 @@ steps:
       - '-c'
       - |
         cd /workspace/app
-        echo "Restoring packages from BaGet..."
-        dotnet restore MyApp.csproj --source baget
+        echo "Restoring packages using BaGet NuGet.Config..."
+        dotnet restore MyApp.csproj --configfile NuGet.Config
 
-  # Step 4: Confirm .nupkg packages are downloaded
+  # Step 4: Confirm .nupkg packages are cached locally
   - name: 'ubuntu'
     id: 'Verify Nupkg'
     entrypoint: 'bash'
