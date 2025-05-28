@@ -1,48 +1,78 @@
 steps:
-  # Step 1: Clone the GitHub repo
-  - name: 'gcr.io/cloud-builders/git'
-    args: ['clone', 'https://github.com/20481A04K2/gcpscriptnugetrepo.git']
-    dir: '/workspace'
-
-
-  # Step 2: Download the .nupkg file using gsutil (requires cloud-sdk image)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 1: Download GitHub repo ZIP and extract it
+  - name: 'gcr.io/cloud-builders/curl'
+    id: 'Download GitHub Source'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        mkdir -p /workspace/local-nuget-packages
-        gsutil cp gs://my-dotnet-packages/MyDotNetWebApp.1.0.0.nupkg /workspace/local-nuget-packages/
+        echo "Downloading GitHub source zip..."
+        curl -L -o source.zip https://github.com/20481A04K2/gcpscriptnugetrepo/archive/refs/heads/main.zip
+        unzip source.zip -d /workspace
+        mv /workspace/gcpscriptnugetrepo-main /workspace/app
 
-  # Step 3: Use .NET SDK to restore and publish using local nupkg
+  # Step 2: Add BaGet NuGet source using secret API key
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
-    entrypoint: 'bash'
+    id: 'Add BaGet NuGet Source'
+    entrypoint: bash
+    secretEnv: ['BAGET_API_KEY']
     args:
-      - '-c'
+      - -c
       - |
-        # Create NuGet.Config using the correct path
-        mkdir -p ~/.nuget/NuGet
-        echo "<configuration>
-           <packageSources>
-              <add key='LocalPackages' value='/workspace/local-nuget-packages' />
-              <add key='nuget.org' value='https://api.nuget.org/v3/index.json' />
-           </packageSources>
-        </configuration>" > ~/.nuget/NuGet/NuGet.Config
+        echo "Adding BaGet NuGet source..."
+        dotnet nuget add source https://baget-service-880653953247.asia-south1.run.app/v3/index.json \
+          --name baget \
+          --username anyuser \
+          --password "$BAGET_API_KEY" \
+          --store-password-in-clear-text
 
-        # Move to repo directory
-        cd /workspace/gcpscriptnugetrepo
+  # Step 3: Restore packages using BaGet source
+  - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
+    id: 'Restore Packages from BaGet'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd /workspace/app
+        echo "Restoring packages from BaGet..."
+        dotnet restore MyApp.csproj --source baget
 
-        # Restore and publish
-        dotnet restore MyApp.csproj --configfile ~/.nuget/NuGet/NuGet.Config
-        dotnet publish MyApp.csproj -c Release -o ./dist
+  # Step 4: Confirm .nupkg packages are downloaded
+  - name: 'ubuntu'
+    id: 'Verify Nupkg'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "Checking if nupkg files are cached locally..."
+        find ~/.nuget/packages -name '*.nupkg' -exec du -h {} \; || echo "No nupkg files found."
 
-  # Step 4: Upload published output to GCS
+  # Step 5: Build and Publish .NET App
+  - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
+    id: 'Publish App'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd /workspace/app
+        dotnet publish MyApp.csproj -c Release -o dist
+        echo "Contents of dist:"
+        ls -lh dist
+
+  # Step 6: Upload dist/ to GCS
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'bash'
+    id: 'Upload to GCS'
+    entrypoint: bash
     args:
-      - '-c'
+      - -c
       - |
-        gsutil -m cp -r /workspace/gcpscriptnugetrepo/dist/* gs://my-dotnet-packages/dist/
+        echo "Uploading dist/ to GCS..."
+        gsutil -m cp -r /workspace/app/dist/* gs://my-dotnet-packages/dist/
+
+secrets:
+- kmsKeyName: projects/onyx-antler-459216-j6/locations/global/keyRings/my-keyring/cryptoKeys/my-key
+  secretEnv:
+    BAGET_API_KEY: baget-api-key
 
 options:
   logging: CLOUD_LOGGING_ONLY
