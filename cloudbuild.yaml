@@ -22,31 +22,22 @@ steps:
       - |
         echo "Creating NuGet.Config with BaGet source..."
         cat > /workspace/app/NuGet.Config <<EOF
-        <?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear /><add key="baget" value="https://baget-service-880653953247.asia-south1.run.app/v3/index.json" /></packageSources><packageSourceCredentials><baget><add key="Username" value="anyuser" /><add key="ClearTextPassword" value="$$BAGET_API_KEY" /></baget></packageSourceCredentials></configuration>
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="baget" value="https://baget-service-880653953247.asia-south1.run.app/v3/index.json" />
+          </packageSources>
+          <packageSourceCredentials>
+            <baget>
+              <add key="Username" value="anyuser" />
+              <add key="ClearTextPassword" value="$$BAGET_API_KEY" />
+            </baget>
+          </packageSourceCredentials>
+        </configuration>
         EOF
 
-  # Step 3: Restore packages using the created NuGet.Config
-  - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
-    id: 'Restore Packages from BaGet'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        cd /workspace/app
-        echo "Restoring packages using BaGet NuGet.Config..."
-        dotnet restore MyApp.csproj --configfile NuGet.Config
-
-  # Step 4: Confirm .nupkg packages are cached locally
-  - name: 'ubuntu'
-    id: 'Verify Nupkg'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "Checking if nupkg files are cached locally..."
-        find ~/.nuget/packages -name '*.nupkg' -exec du -h {} \; || echo "No nupkg files found."
-
-  # Step 5: Build and Publish .NET App
+  # Step 3: Build and Publish .NET App (includes implicit restore)
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Publish App'
     entrypoint: 'bash'
@@ -54,12 +45,12 @@ steps:
       - '-c'
       - |
         cd /workspace/app
-        echo "Publishing application..."
-        dotnet publish MyApp.csproj -c Release -o dist
+        echo "Publishing application (this will restore packages implicitly)..."
+        dotnet publish MyApp.csproj --configfile NuGet.Config -c Release -o dist
         echo "Contents of dist:"
         ls -lh dist
 
-  # Step 6: Upload dist/ to GCS
+  # Step 4: Upload dist/ to GCS
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Upload to GCS'
     entrypoint: 'bash'
