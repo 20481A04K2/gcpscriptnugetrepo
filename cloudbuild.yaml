@@ -22,19 +22,7 @@ steps:
       - |
         echo "Creating NuGet.Config with BaGet source..."
         cat > /workspace/app/NuGet.Config <<EOF
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <packageSources>
-            <clear />
-            <add key="baget" value="https://baget-service-880653953247.asia-south1.run.app/v3/index.json" />
-          </packageSources>
-          <packageSourceCredentials>
-            <baget>
-              <add key="Username" value="anyuser" />
-              <add key="ClearTextPassword" value="$$BAGET_API_KEY" />
-            </baget>
-          </packageSourceCredentials>
-        </configuration>
+        <?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear /><add key="baget" value="https://baget-service-880653953247.asia-south1.run.app/v3/index.json" /></packageSources><packageSourceCredentials><baget><add key="Username" value="anyuser" /><add key="ClearTextPassword" value="$$BAGET_API_KEY" /></baget></packageSourceCredentials></configuration>
         EOF
 
   # Step 3: Restore packages using the created NuGet.Config
@@ -46,7 +34,7 @@ steps:
       - |
         cd /workspace/app
         echo "Restoring packages using BaGet NuGet.Config..."
-        dotnet restore MyApp.csproj --source https://baget-service-880653953247.asia-south1.run.app/v3/index.json --configfile /dev/null
+        dotnet restore MyApp.csproj --configfile NuGet.Config
 
   # Step 4: Confirm .nupkg packages are cached locally
   - name: 'ubuntu'
