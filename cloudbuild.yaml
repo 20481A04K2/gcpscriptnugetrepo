@@ -70,12 +70,10 @@ steps:
         echo "Uploading dist/ to GCS..."
         gsutil -m cp -r /workspace/app/dist/* gs://my-dotnet-packages/dist/
 
-# Secrets from Secret Manager
-secrets:
-- kmsKeyName: projects/onyx-antler-459216-j6/locations/global/keyRings/my-keyring/cryptoKeys/my-key
-  secretEnv:
-    BAGET_API_KEY: projects/onyx-antler-459216-j6/secrets/baget-api-key/versions/latest
+availableSecrets:
+  secretManager:
+    - versionName: projects/onyx-antler-459216-j6/secrets/baget-api-key/versions/latest
+      env: BAGET_API_KEY
 
-# Optional: Only use Cloud Logging
 options:
   logging: CLOUD_LOGGING_ONLY
