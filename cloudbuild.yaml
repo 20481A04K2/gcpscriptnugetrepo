@@ -6,11 +6,11 @@ steps:
     args:
       - '-c'
       - |
+        apt-get update && apt-get install -y unzip curl
         echo "Downloading GitHub source zip..."
         curl -L -o source.zip https://github.com/20481A04K2/gcpscriptnugetrepo/archive/refs/heads/main.zip
         unzip source.zip -d /workspace
         mv /workspace/gcpscriptnugetrepo-main /workspace/app
-
   # Step 2: Add BaGet NuGet source using secret API key
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Add BaGet NuGet Source'
