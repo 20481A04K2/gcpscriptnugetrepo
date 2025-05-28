@@ -23,7 +23,7 @@ steps:
         dotnet nuget add source https://baget-service-880653953247.asia-south1.run.app/v3/index.json \
           --name baget \
           --username anyuser \
-          --password "$BAGET_API_KEY" \
+          --password "$$BAGET_API_KEY" \
           --store-password-in-clear-text
 
   # Step 3: Restore packages using BaGet source
