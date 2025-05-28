@@ -46,7 +46,7 @@ steps:
       - |
         cd /workspace/app
         echo "Restoring packages using BaGet NuGet.Config..."
-        dotnet restore MyApp.csproj --configfile NuGet.Config
+        dotnet restore MyApp.csproj --source https://baget-service-880653953247.asia-south1.run.app/v3/index.json --configfile /dev/null
 
   # Step 4: Confirm .nupkg packages are cached locally
   - name: 'ubuntu'
