@@ -14,10 +14,10 @@ steps:
   # Step 2: Add BaGet NuGet source using secret API key
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Add BaGet NuGet Source'
-    entrypoint: bash
+    entrypoint: 'bash'
     secretEnv: ['BAGET_API_KEY']
     args:
-      - -c
+      - '-c'
       - |
         echo "Adding BaGet NuGet source..."
         dotnet nuget add source https://baget-service-880653953247.asia-south1.run.app/v3/index.json \
@@ -29,9 +29,9 @@ steps:
   # Step 3: Restore packages using BaGet source
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Restore Packages from BaGet'
-    entrypoint: bash
+    entrypoint: 'bash'
     args:
-      - -c
+      - '-c'
       - |
         cd /workspace/app
         echo "Restoring packages from BaGet..."
@@ -40,9 +40,9 @@ steps:
   # Step 4: Confirm .nupkg packages are downloaded
   - name: 'ubuntu'
     id: 'Verify Nupkg'
-    entrypoint: bash
+    entrypoint: 'bash'
     args:
-      - -c
+      - '-c'
       - |
         echo "Checking if nupkg files are cached locally..."
         find ~/.nuget/packages -name '*.nupkg' -exec du -h {} \; || echo "No nupkg files found."
@@ -50,11 +50,12 @@ steps:
   # Step 5: Build and Publish .NET App
   - name: 'mcr.microsoft.com/dotnet/sdk:7.0'
     id: 'Publish App'
-    entrypoint: bash
+    entrypoint: 'bash'
     args:
-      - -c
+      - '-c'
       - |
         cd /workspace/app
+        echo "Publishing application..."
         dotnet publish MyApp.csproj -c Release -o dist
         echo "Contents of dist:"
         ls -lh dist
@@ -62,18 +63,19 @@ steps:
   # Step 6: Upload dist/ to GCS
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Upload to GCS'
-    entrypoint: bash
+    entrypoint: 'bash'
     args:
-      - -c
+      - '-c'
       - |
         echo "Uploading dist/ to GCS..."
         gsutil -m cp -r /workspace/app/dist/* gs://my-dotnet-packages/dist/
 
+# Secrets from Secret Manager
 secrets:
 - kmsKeyName: projects/onyx-antler-459216-j6/locations/global/keyRings/my-keyring/cryptoKeys/my-key
   secretEnv:
     BAGET_API_KEY: projects/onyx-antler-459216-j6/secrets/baget-api-key/versions/latest
 
-
+# Optional: Only use Cloud Logging
 options:
   logging: CLOUD_LOGGING_ONLY
