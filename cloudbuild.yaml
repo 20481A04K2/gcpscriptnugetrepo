@@ -72,7 +72,7 @@ steps:
 secrets:
 - kmsKeyName: projects/onyx-antler-459216-j6/locations/global/keyRings/my-keyring/cryptoKeys/my-key
   secretEnv:
-    BAGET_API_KEY: baget-api-key
+    BAGET_API_KEY: projects/onyx-antler-459216-j6/secrets/baget-api-key/versions/latest
 
 options:
   logging: CLOUD_LOGGING_ONLY
