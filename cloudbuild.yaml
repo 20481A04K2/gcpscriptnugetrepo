@@ -74,5 +74,6 @@ secrets:
   secretEnv:
     BAGET_API_KEY: projects/onyx-antler-459216-j6/secrets/baget-api-key/versions/latest
 
+
 options:
   logging: CLOUD_LOGGING_ONLY
